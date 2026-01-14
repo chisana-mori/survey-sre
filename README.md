@@ -64,8 +64,8 @@ cp .env.example .env
 编辑 `.env` 文件，填入你的 Supabase 凭证：
 
 ```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your-anon-key
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 获取凭证的方式：
