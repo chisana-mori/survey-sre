@@ -1,30 +1,87 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { VentingPost } from '../types';
-
-const MOCK_POSTS: VentingPost[] = [
-  { id: '1', emoji: '🤩', content: "The sloth at the DMV actually processed my paperwork in under 4 hours today! Miracles happen!", likes: '2.4k', rank: 1, rotation: 1 },
-  { id: '2', emoji: '😤', content: "Who keeps leaving carrot cake crumbs in the patrol car? Nick, I'm looking at you.", likes: '158', rotation: -1 },
-  { id: '3', emoji: '😑', content: "The AC in the Rainforest District sector is stuck on 'Desert Heat'. I'm melting.", likes: '1.1k', rank: 2, rotation: 2 },
-  { id: '4', emoji: '🍩', content: "The donut shop downstairs is out of Gazelle's favorite flavor AGAIN.", likes: '89', rotation: 1 },
-  { id: '5', emoji: '🤪', content: "Found a Pawpsicle stick in the chief's office. Big trouble coming!", likes: '942', rank: 3, rotation: -1 },
-  { id: '6', emoji: '😩', content: "Why are the keyboard keys so big? I'm a hamster, I need smaller gear.", likes: '45', rotation: 2 },
-  { id: '7', emoji: '🦁', content: "Mayor's speech lasted 3 hours. My tail fell asleep.", likes: '312', rotation: -2 }
-];
+import { getVentingPosts, toggleLike, checkUserLike } from '../lib/database';
 
 interface VentingWallProps {
   onBack: () => void;
+  onGoToSurvey: () => void;
 }
 
 type Tab = 'wall' | 'hot' | 'me';
 type SortBy = 'new' | 'likes';
 
-const VentingWall: React.FC<VentingWallProps> = ({ onBack }) => {
+const VentingWall: React.FC<VentingWallProps> = ({ onBack, onGoToSurvey }) => {
+  const [posts, setPosts] = useState<VentingPost[]>([]);
+  const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('wall');
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [sortBy, setSortBy] = useState<SortBy>('new');
   const [filterEmoji, setFilterEmoji] = useState<string | null>(null);
+
+  // Load posts from database on mount
+  useEffect(() => {
+    loadPosts();
+  }, [sortBy]);
+
+  const loadPosts = async () => {
+    setIsLoading(true);
+    try {
+      const result = await getVentingPosts(50, sortBy);
+      if (result.success && result.data) {
+        setPosts(result.data);
+
+        // Check like status for each post
+        for (const post of result.data) {
+          const likeCheck = await checkUserLike(post.id);
+          if (likeCheck.liked) {
+            setLikedPosts(prev => new Set([...prev, post.id]));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load posts:', error);
+      setPosts([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleLike = async (postId: string) => {
+    try {
+      const result = await toggleLike(postId);
+      if (result.success && result.likesCount !== undefined) {
+        // Update the post's likes count
+        setPosts(prev => prev.map(post => {
+          if (post.id === postId) {
+            const newCount = result.likesCount;
+            const formattedLikes = newCount >= 1000
+              ? (newCount / 1000).toFixed(1) + 'k'
+              : newCount.toString();
+            return { ...post, likes: formattedLikes };
+          }
+          return post;
+        }));
+
+        // Toggle liked status
+        if (result.liked !== undefined) {
+          setLikedPosts(prev => {
+            const newSet = new Set(prev);
+            if (result.liked) {
+              newSet.add(postId);
+            } else {
+              newSet.delete(postId);
+            }
+            return newSet;
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+    }
+  };
 
   // Helper to parse likes string (e.g., '2.4k' -> 2400)
   const parseLikes = (likes: string) => {
@@ -33,11 +90,11 @@ const VentingWall: React.FC<VentingWallProps> = ({ onBack }) => {
   };
 
   const processedPosts = useMemo(() => {
-    let result = [...MOCK_POSTS];
+    let result = [...posts];
 
     // Search filter
     if (searchTerm) {
-      result = result.filter(post => 
+      result = result.filter(post =>
         post.content.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
@@ -51,19 +108,13 @@ const VentingWall: React.FC<VentingWallProps> = ({ onBack }) => {
     if (activeTab === 'hot') {
       result = result.filter(post => parseLikes(post.likes) > 500);
     } else if (activeTab === 'me') {
-      // Dummy "Me" filtering: just show one post
-      result = result.slice(0, 1);
+      // Show only liked posts for "Me" tab
+      result = result.filter(post => likedPosts.has(post.id));
     }
 
-    // Sorting
-    if (sortBy === 'likes' || activeTab === 'hot') {
-      result.sort((a, b) => parseLikes(b.likes) - parseLikes(a.likes));
-    } else {
-      result.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-    }
-
+    // Already sorted by database, just apply client-side filtering
     return result;
-  }, [searchTerm, sortBy, filterEmoji, activeTab]);
+  }, [posts, searchTerm, sortBy, filterEmoji, activeTab, likedPosts]);
 
   return (
     <div className="relative h-screen w-full zootopia-gradient overflow-hidden flex flex-col">
@@ -135,11 +186,16 @@ const VentingWall: React.FC<VentingWallProps> = ({ onBack }) => {
       </header>
 
       <main className="flex-1 w-full px-4 overflow-y-auto pt-2 pb-24 no-scrollbar">
-        {processedPosts.length > 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center h-full text-white/80 gap-4">
+            <div className="text-7xl animate-pulse">🦥</div>
+            <p className="font-bold">Flash 正在慢慢加载中...</p>
+          </div>
+        ) : processedPosts.length > 0 ? (
           <div className="columns-2 gap-3">
             {processedPosts.map(post => (
               <div key={post.id} className="mb-3 break-inside-avoid animate-in zoom-in-95 duration-300">
-                <div 
+                <div
                   className={`glass-card rounded-2xl p-4 relative overflow-visible transform transition-transform hover:scale-[1.02]`}
                   style={{ transform: `rotate(${post.rotation}deg)` }}
                 >
@@ -158,8 +214,13 @@ const VentingWall: React.FC<VentingWallProps> = ({ onBack }) => {
                   </div>
                   <p className="text-[#4a3219] text-sm font-bold leading-relaxed">{post.content}</p>
                   <div className="flex justify-end mt-3">
-                    <button className="bg-white/40 px-2 py-1 rounded-full flex items-center gap-1 active:scale-90 transition-transform">
-                      <span className="text-xs">🔥</span>
+                    <button
+                      onClick={() => handleLike(post.id)}
+                      className={`px-2 py-1 rounded-full flex items-center gap-1 active:scale-90 transition-transform ${
+                        likedPosts.has(post.id) ? 'bg-primary/50' : 'bg-white/40'
+                      }`}
+                    >
+                      <span className="text-xs">{likedPosts.has(post.id) ? '❤️' : '🔥'}</span>
                       <span className="text-xs font-extrabold text-[#4a3219]">{post.likes}</span>
                     </button>
                   </div>
@@ -168,9 +229,18 @@ const VentingWall: React.FC<VentingWallProps> = ({ onBack }) => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-white/60 gap-4">
-            <span className="material-symbols-outlined text-6xl">sentiment_dissatisfied</span>
-            <p className="font-bold">No results found, Flash!</p>
+          <div className="flex flex-col items-center justify-center h-full text-white/80 gap-6 px-6">
+            <div className="text-8xl">🦥</div>
+            <div className="text-center space-y-2">
+              <p className="text-2xl font-bold">吐槽墙还是空的...</p>
+              <p className="text-sm text-white/70">还没有人发表吐槽呢</p>
+            </div>
+            <button
+              onClick={onGoToSurvey}
+              className="mt-4 bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-xl shadow-lg active:scale-95 transition-all"
+            >
+              📝 去填写问卷
+            </button>
           </div>
         )}
       </main>

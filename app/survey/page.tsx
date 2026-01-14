@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useRouter } from '../../lib/router';
 import { SurveyState } from '../../types';
+import { saveSurvey } from '../../lib/database';
+import SlothSuccessModal from '../../components/SlothSuccessModal';
 
 const TASKS = ['手工处理数据', '重复运维', '会议记录', '报销流程', '文档归档'];
 const AI_TASKS = ['撰写报告', '总结会议', '分析数据', '邮件回复', '代码生成', '创意脑暴'];
@@ -16,6 +18,8 @@ const MOODS = [
 export default function SurveyPage() {
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [state, setState] = useState<SurveyState>({
     tasks: [],
     feedback: '',
@@ -26,8 +30,30 @@ export default function SurveyPage() {
 
   const updateState = (update: Partial<SurveyState>) => setState(prev => ({ ...prev, ...update }));
 
-  const toggleItem = (list: string[], item: string) => 
+  const toggleItem = (list: string[], item: string) =>
     list.includes(item) ? list.filter(i => i !== item) : [...list, item];
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      const result = await saveSurvey(state);
+      if (result.success) {
+        setShowSuccessModal(true);
+      } else {
+        alert(`提交失败: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+      alert('提交失败，请稍后重试');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleModalComplete = () => {
+    setShowSuccessModal(false);
+    router.push('/venting');
+  };
 
   return (
     <div className="flex flex-col min-h-full">
@@ -110,13 +136,16 @@ export default function SurveyPage() {
       </div>
 
       <div className="p-4 pt-10">
-        <button 
-          onClick={() => step === 1 ? setStep(2) : router.push('/venting')}
-          className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all"
+        <button
+          onClick={() => step === 1 ? setStep(2) : handleSubmit()}
+          disabled={isSubmitting || step === 2 && !state.mood}
+          className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all"
         >
-          {step === 1 ? 'Next Step' : 'Submit & See Wall'}
+          {isSubmitting ? '提交中...' : step === 1 ? 'Next Step' : 'Submit & See Wall'}
         </button>
       </div>
+
+      <SlothSuccessModal visible={showSuccessModal} onComplete={handleModalComplete} />
     </div>
   );
 }
