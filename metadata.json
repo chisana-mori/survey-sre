@@ -1,0 +1,7 @@
+{
+  "name": "Zootopia: Fun Work",
+  "description": "A Zootopia-themed workplace feedback and venting platform designed to make office life more fun and interactive.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
