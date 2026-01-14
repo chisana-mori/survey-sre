@@ -23,8 +23,27 @@ export default function SurveyPage() {
 
   const updateState = (update: Partial<SurveyState>) => setState(prev => ({ ...prev, ...update }));
 
-  const toggleItem = (list: string[], item: string) =>
-    list.includes(item) ? list.filter(i => i !== item) : [...list, item];
+  const handleTaskToggle = (
+    item: string,
+    currentList: string[],
+    currentText: string,
+    listKey: 'tasks' | 'aiTasks',
+    textKey: 'feedback' | 'aiHelp'
+  ) => {
+    const isSelected = currentList.includes(item);
+    const newList = isSelected
+      ? currentList.filter(i => i !== item)
+      : [...currentList, item];
+
+    let newText = currentText;
+    // If adding a new item, append it to the text area
+    if (!isSelected) {
+      const prefix = currentText ? '\n' : '';
+      newText = `${currentText}${prefix}${item}: `;
+    }
+
+    updateState({ [listKey]: newList, [textKey]: newText });
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -77,13 +96,14 @@ export default function SurveyPage() {
               <p className="text-[#9c7349] dark:text-neutral-400 text-sm mb-6">Tell us what slows you down.</p>
               <div className="flex flex-wrap gap-2 mb-6">
                 {TASKS.map(t => (
-                  <button key={t} onClick={() => updateState({ tasks: toggleItem(state.tasks, t) })}
+                  <button key={t}
+                    onClick={() => handleTaskToggle(t, state.tasks, state.feedback, 'tasks', 'feedback')}
                     className={`px-4 py-2 rounded-full border-2 text-sm font-bold transition-all ${state.tasks.includes(t) ? 'bg-primary border-primary text-white' : 'border-primary/20 text-primary'}`}>
                     {t}
                   </button>
                 ))}
               </div>
-              <textarea 
+              <textarea
                 className="w-full min-h-[120px] p-4 rounded-xl border-2 border-[#e8dbce] dark:border-neutral-700 bg-background-light dark:bg-neutral-800"
                 placeholder="Details about your struggle..."
                 value={state.feedback}
@@ -98,13 +118,14 @@ export default function SurveyPage() {
               <p className="text-[#9c7349] dark:text-neutral-400 text-sm mb-6">Let the AI handle the boring stuff!</p>
               <div className="flex flex-wrap gap-2 mb-6">
                 {AI_TASKS.map(t => (
-                  <button key={t} onClick={() => updateState({ aiTasks: toggleItem(state.aiTasks, t) })}
+                  <button key={t}
+                    onClick={() => handleTaskToggle(t, state.aiTasks, state.aiHelp, 'aiTasks', 'aiHelp')}
                     className={`px-4 py-2 rounded-full border-2 text-sm font-bold transition-all ${state.aiTasks.includes(t) ? 'bg-primary border-primary text-white' : 'border-primary/20 text-primary'}`}>
                     {t}
                   </button>
                 ))}
               </div>
-              <textarea 
+              <textarea
                 className="w-full min-h-[120px] p-4 rounded-xl border-2 border-[#e8dbce] dark:border-neutral-700 bg-background-light dark:bg-neutral-800"
                 placeholder="What specifically should AI do for you?"
                 value={state.aiHelp}
