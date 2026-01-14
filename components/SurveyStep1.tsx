@@ -9,7 +9,7 @@ interface SurveyStep1Props {
   onBack: () => void;
 }
 
-const TASKS = ['手工处理数据', '重复运维', '会议记录', '文档归档'];
+const TASKS = ['手工处理数据', '重复运维', 'SOP编写'];
 
 const SurveyStep1: React.FC<SurveyStep1Props> = ({ state, updateState, onNext, onBack }) => {
   const toggleTask = (task: string) => {

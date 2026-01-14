@@ -5,7 +5,7 @@ import { SurveyState } from '../../types';
 import { saveSurvey } from '../../lib/database';
 import SlothSuccessModal from '../../components/SlothSuccessModal';
 
-const TASKS = ['手工处理数据', '重复运维', '会议记录', '文档归档'];
+const TASKS = ['手工处理数据', '重复运维', 'SOP编写'];
 const AI_TASKS = ['撰写报告', '总结会议', '分析数据', '邮件回复', '代码生成', '创意脑暴'];
 
 export default function SurveyPage() {
