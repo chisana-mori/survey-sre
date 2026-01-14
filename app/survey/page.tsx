@@ -7,13 +7,6 @@ import SlothSuccessModal from '../../components/SlothSuccessModal';
 
 const TASKS = ['手工处理数据', '重复运维', '会议记录', '文档归档'];
 const AI_TASKS = ['撰写报告', '总结会议', '分析数据', '邮件回复', '代码生成', '创意脑暴'];
-const MOODS = [
-  { emoji: '😤', label: '糟透了' },
-  { emoji: '😑', label: '不太好' },
-  { emoji: '😐', label: '还凑合' },
-  { emoji: '😊', label: '挺不错' },
-  { emoji: '🤩', label: '超棒的' }
-];
 
 export default function SurveyPage() {
   const router = useRouter();
@@ -119,18 +112,6 @@ export default function SurveyPage() {
               />
             </div>
 
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl p-6 shadow-xl border border-primary/10">
-              <h3 className="text-lg font-bold mb-4 text-center">当前心情如何?</h3>
-              <div className="grid grid-cols-5 gap-2">
-                {MOODS.map(m => (
-                  <button key={m.label} onClick={() => updateState({ mood: m.label })}
-                    className={`flex flex-col items-center p-2 rounded-xl border-2 transition-all ${state.mood === m.label ? 'border-primary bg-primary/10' : 'border-transparent'}`}>
-                    <span className="text-2xl">{m.emoji}</span>
-                    <span className="text-[10px] font-bold mt-1">{m.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         )}
       </div>
@@ -138,7 +119,7 @@ export default function SurveyPage() {
       <div className="p-4 pt-10">
         <button
           onClick={() => step === 1 ? setStep(2) : handleSubmit()}
-          disabled={isSubmitting || step === 2 && !state.mood}
+          disabled={isSubmitting}
           className="w-full bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all"
         >
           {isSubmitting ? '提交中...' : step === 1 ? 'Next Step' : 'Submit & See Wall'}

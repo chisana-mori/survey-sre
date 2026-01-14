@@ -9,14 +9,6 @@ interface SurveyStep2Props {
   onBack: () => void;
 }
 
-const MOODS = [
-  { emoji: '😤', label: '糟透了' },
-  { emoji: '😑', label: '不太好' },
-  { emoji: '😐', label: '还凑合' },
-  { emoji: '😊', label: '挺不错' },
-  { emoji: '🤩', label: '超棒的' }
-];
-
 const AI_TASKS = ['撰写报告', '总结会议', '分析数据', '邮件回复', '代码生成', '创意脑暴'];
 
 const SurveyStep2: React.FC<SurveyStep2Props> = ({ state, updateState, onSubmit, onBack }) => {
@@ -87,44 +79,6 @@ const SurveyStep2: React.FC<SurveyStep2Props> = ({ state, updateState, onSubmit,
         </div>
       </div>
 
-      {/* Question 03: Mood (The existing implementation) */}
-      <div className="relative flex px-4 pt-4 items-end shrink-0">
-        <div className="w-1/4">
-          <div className="w-full aspect-square bg-center bg-no-repeat bg-contain" 
-               style={{ backgroundImage: `url("https://lh3.googleusercontent.com/aida-public/AB6AXuAJL0b5RilLFO-PKr9TBEBzz9QPp5RdWGYF8nQrD7iiFymC9JJdwErx7YiTFRzINJLYmLvtHnjSD1bpsdO93OYunF4US9u_yuAfAhX4mZCBLWKzqAdSDtM_XG3dX_SXCca69G6NJSsqd8SH01iYHRr8SulQrRq1ZwmCcIbjZ3CnnK6dsAa703Mt6KA7pkqLHcs67eVs8uskZNI_CLMTQzxjqbvo2p4JCLjiN1DvdHs2QiKa1hW4MD_hlzKnYaumgZAUvv8rut48AJD-")` }}>
-          </div>
-        </div>
-        <div className="w-3/4 pb-4">
-          <div className="bg-white dark:bg-[#3d2e20] p-3 rounded-xl rounded-bl-none shadow-sm relative border border-[#f2800d]/20 ml-2">
-            <p className="text-[#1c140d] dark:text-white text-sm font-medium leading-normal">
-              尼克正在为你加油鼓劲！把真实感受告诉我吧。
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="pt-2 shrink-0">
-        <h2 className="text-[#1c140d] dark:text-white tracking-tight text-xl font-bold px-4 text-center">当前心情如何?</h2>
-      </div>
-
-      <div className="grid grid-cols-5 gap-2 p-4 shrink-0">
-        {MOODS.map(mood => (
-          <button 
-            key={mood.label}
-            onClick={() => updateState({ mood: mood.label })}
-            className={`flex flex-col items-center gap-2 p-2 rounded-lg transition-all active:scale-95 border-2 ${
-              state.mood === mood.label 
-              ? 'border-primary bg-primary/10' 
-              : 'border-transparent bg-white dark:bg-[#3d2e20] shadow-sm hover:border-primary/50'
-            }`}
-          >
-            <span className="text-2xl">{mood.emoji}</span>
-            <span className={`text-[10px] font-bold ${state.mood === mood.label ? 'text-primary' : 'text-[#1c140d] dark:text-white'}`}>
-              {mood.label}
-            </span>
-          </button>
-        ))}
-      </div>
 
       <div className="mt-auto p-4 pb-10 relative z-10 shrink-0">
         <button 
