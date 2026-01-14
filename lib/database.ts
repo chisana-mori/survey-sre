@@ -50,18 +50,33 @@ export const saveSurvey = async (surveyData: SurveyState): Promise<{ success: bo
 
     if (error) throw error;
 
+    const emoji = getMoodEmoji(surveyData.mood);
+    const postsToCreate = [];
+
     if (surveyData.feedback) {
-      const emoji = getMoodEmoji(surveyData.mood);
-      await supabase
-        .from('venting_posts')
-        .insert({
-          emoji,
-          content: surveyData.feedback,
-          likes_count: 0,
-          rotation: Math.floor(Math.random() * 5) - 2,
-          user_ip: userIP,
-          user_agent: userAgent,
-        });
+      postsToCreate.push({
+        emoji,
+        content: surveyData.feedback,
+        likes_count: 0,
+        rotation: Math.floor(Math.random() * 5) - 2,
+        user_ip: userIP,
+        user_agent: userAgent,
+      });
+    }
+
+    if (surveyData.aiHelp) {
+      postsToCreate.push({
+        emoji: '🤖',
+        content: surveyData.aiHelp,
+        likes_count: 0,
+        rotation: Math.floor(Math.random() * 5) - 2,
+        user_ip: userIP,
+        user_agent: userAgent,
+      });
+    }
+
+    if (postsToCreate.length > 0) {
+      await supabase.from('venting_posts').insert(postsToCreate);
     }
 
     return { success: true, data };
